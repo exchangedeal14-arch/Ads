@@ -2,20 +2,11 @@ import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import BOT_TOKEN, OWNER_ID, REQUIRED_CHANNELS
+import database  # Connects the local SQLite engine explicitly
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
-# Global Active Multi-Tenant Memory Matrix
-db = {
-    "users": {},        # Memory: chat_id -> user specific configuration profile
-    "user_state": {},   # Memory: tracks active workflow inputs per session
-    "system": {
-        "upi_id": "bixxu@upi",
-        "total_active_sessions": 0
-    }
-}
-
-# --- GATEKEEPER AUTOMATION MIDDLEWARE ---
+# --- INSTANT SECURITY VALIDATOR PIPELINE ---
 def is_user_verified(chat_id):
     if chat_id == OWNER_ID:
         return True
@@ -28,7 +19,7 @@ def is_user_verified(chat_id):
             return False
     return True
 
-# --- EXQUISITE HIGH-END INLINE CONTROL SURFACES ---
+# --- HIGH GLOSS INLINE GRAPHICS CONTROLLERS ---
 def lock_interface():
     markup = InlineKeyboardMarkup(row_width=1)
     markup.add(
@@ -40,33 +31,26 @@ def lock_interface():
 
 def dashboard_interface(chat_id, is_premium):
     markup = InlineKeyboardMarkup()
-    
-    # Row 1: Fully Automated Client Login System
     markup.row(
         InlineKeyboardButton("🔑 INJECT ACCOUNT LOGIN", callback_data="client_login"),
         InlineKeyboardButton("👥 TERMINAL INSTANCES", callback_data="client_instances")
     )
-    # Row 2: Campaign Target Routing Configuration
     markup.row(
         InlineKeyboardButton("📝 SET MARKETING AD COPY", callback_data="inline_set_msg"),
         InlineKeyboardButton("⏱️ SET THROTTLE COOLDOWN", callback_data="inline_set_time")
     )
-    # Row 3: Live Automation Ignition Core
     markup.row(
-        InlineKeyboardButton("▶️ ACTIVATE DISPATCH LOGIC", callback_data="engine_start"),
-        InlineKeyboardButton("⏸️ FREEZE CORE PROCESSING", callback_data="engine_stop")
+        InlineKeyboardButton("▶️ LAUNCH CAMPAIGNS", callback_data="engine_start"),
+        InlineKeyboardButton("⏸️ FREEZE CORE ENGINE", callback_data="engine_stop")
     )
-    # Row 4: Premium Upsell Conversion System
-    if not is_premium:
+    if not is_premium and chat_id != OWNER_ID:
         markup.row(InlineKeyboardButton("👑 UPGRADE TO PREMIUM VIP (₹199) 👑", callback_data="buy_premium"))
     
-    # Row 5: Utilities Controls
     markup.row(
         InlineKeyboardButton("🔄 REFRESH NETWORK STATE", callback_data="refresh_dash"),
         InlineKeyboardButton("📊 PERFORMANCE LOGS", callback_data="view_stats")
     )
     
-    # Master System Layer: Visible exclusively to Root Admin
     if chat_id == OWNER_ID:
         markup.row(InlineKeyboardButton("🛠️ ACCESS ADMIN MAIN HUB 🛠️", callback_data="owner_panel"))
         
@@ -80,14 +64,14 @@ def owner_interface():
     )
     markup.row(
         InlineKeyboardButton("📢 BROADCAST NETWORK PACKET", callback_data="owner_broadcast"),
-        InlineKeyboardButton("📉 PURGE TEMPORARY CACHE", callback_data="owner_sys_reset")
+        InlineKeyboardButton("📉 PURGE PERSISTENT CACHE", callback_data="owner_sys_reset")
     )
     markup.row(InlineKeyboardButton("🔙 DISCONNECT SYSTEM HUB", callback_data="refresh_dash"))
     return markup
 
 def back_button():
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("🔙 TERMINATE SESSION & RETURN", callback_data="refresh_dash"))
+    markup.add(InlineKeyboardButton("🔙 TERMINATE WORKFLOW & RETURN", callback_data="refresh_dash"))
     return markup
 
 def owner_back_button():
@@ -95,54 +79,48 @@ def owner_back_button():
     markup.add(InlineKeyboardButton("🔙 BACK TO ROOT COMMAND CORE", callback_data="owner_panel"))
     return markup
 
-# --- PRIMARY COCKPIT ENTRYPOINT ---
+# --- PRIMARY INTERFACE DISPATCH PROTOCOL ---
 @bot.message_handler(commands=['start'])
 def boot_system(message):
     chat_id = message.chat.id
-    
-    if chat_id not in db["users"]:
-        db["users"][chat_id] = {
-            "name": message.from_user.first_name,
-            "is_premium": True if chat_id == OWNER_ID else False,
-            "connected_accounts": 0,
-            "interval": 600,
-            "status": "IDLE / PAUSED ⏸️",
-            "ad_msg": "NOT CONFIGURED 🔴"
-        }
+    # Auto registration block initialized via SQLite connection wrapper
+    database.get_user(chat_id, message.from_user.first_name)
 
     if not is_user_verified(chat_id):
         lock_text = (
             f"⚡ <b>ACCESS VIOLATION • SECURITY GATEWAY BLOCKED</b> ⚡\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"To access the distributed Bixxu Advertising Clusters, your account profile "
-            f"must satisfy structural verification checks:\n\n"
+            f"To capture data pipelines inside Bixxu Cloud Clusters, your account profile "
+            f"must satisfy active structural verification metrics:\n\n"
             f"• <b>Network Endpoint 01:</b> {REQUIRED_CHANNELS[0]}\n"
             f"• <b>Network Endpoint 02:</b> {REQUIRED_CHANNELS[1]}\n\n"
-            f"<i>Join the required groups and tap the validation controller interface below.</i>"
+            f"<i>Join the validation loops and touch the terminal interface below to authorize.</i>"
         )
         bot.send_message(chat_id, lock_text, reply_markup=lock_interface())
         return
 
     render_inline_dashboard(chat_id)
 
-# --- CLIENT MAIN ENGINE INTERFACE ---
+# --- COCKPIT INTERFACE RENDERING ENGINE ---
 def render_inline_dashboard(chat_id, message_id=None):
-    user_data = db["users"].get(chat_id)
+    user_data = database.get_user(chat_id)
+    
     tier_badge = "🏅 <b>ROOT ADMIN LICENSE</b>" if chat_id == OWNER_ID else ("👑 <b>PREMIUM VIP ACCESS</b>" if user_data["is_premium"] else "📝 <b>STANDARD EVALUATION LICENSE</b>")
     max_slots = "INFINITE SLOTS" if chat_id == OWNER_ID else ("5 ACTIVE USERBOTS" if user_data["is_premium"] else "1 ACTIVE USERBOT")
+    
     msg_preview = user_data['ad_msg'] if len(user_data['ad_msg']) <= 25 else f"{user_data['ad_msg'][:25]}..."
 
     dash_text = (
-        f"🤖 <b>BIXXU COMMERCIAL AUTOMATION COCKPIT V3.0</b>\n"
+        f"🤖 <b>BIXXU COMMERCIAL AUTOMATION COCKPIT V3.5</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"👤 <b>AUTHENTICATED USER:</b> <code>{user_data['name']}</code>\n"
         f"🛡️ <b>LICENSE THRESHOLD:</b> {tier_badge}\n"
         f"⚙️ <b>AUTOMATION ENGINE STATUS:</b> <b>{user_data['status']}</b>\n\n"
-        f"📊 <b>CLOUD STORAGE LOGS & CONFIGURATIONS:</b>\n"
+        f"📊 <b>PERSISTENT DATABASE TRACKERS & METRICS:</b>\n"
         f"├ Active Session Terminals: <code>{user_data['connected_accounts']}/{max_slots}</code>\n"
         f"├ Propagation Cooldown Delay: <code>{user_data['interval']} seconds</code>\n"
         f"└ Active Broadcast Template: <code>{msg_preview}</code>\n\n"
-        f"🚀 <i>Execution space is 100% inline. Command your instances below:</i>"
+        f"🚀 <i>Execution layer is purely inline. Transmit your processing queries below:</i>"
     )
     
     if message_id:
@@ -152,249 +130,251 @@ def render_inline_dashboard(chat_id, message_id=None):
     else:
         bot.send_message(chat_id, dash_text, reply_markup=dashboard_interface(chat_id, user_data["is_premium"]))
 
-# --- MASTER ADMIN INSIGHTS HUB ---
+# --- ADMINISTRATIVE MASTER EXECUTIVE LAYER ---
 def render_owner_panel(chat_id, message_id):
-    total_users = len(db["users"])
-    premium_users = sum(1 for u in db["users"].values() if u["is_premium"])
+    metrics = database.fetch_total_users_count()
+    current_upi = database.get_system_upi()
     
     owner_text = (
-        f"🛠️ <b>BIXXU CLOUD NETWORKS • ROOT ADMIN ARCHITECTURE CONTROL</b> 🛠️\n"
+        f"🛠️ <b>BIXXU CLOUD NETWORKS • ROOT SYSTEM MATRIX CONFIG</b> 🛠️\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📈 <b>INFRASTRUCTURE STATISTICS FRAMEWORK:</b>\n"
-        f"├ Total Registered Network Profiles: <code>{total_users} Entities</code>\n"
-        f"├ Active Premium VIP Access Keys: <code>{premium_users} Licences</code>\n"
-        f"└ Distributed Sandbox Server Clusters: <code>3 Secure Nodes</code>\n\n"
-        f"💰 <b>FINANCIAL TRANSACTION ENDPOINT PROFILE:</b>\n"
-        f"└ Current Merchant Destination UPI ID: <code>{db['system']['upi_id']}</code>\n\n"
-        f"🎛️ <i>You hold ultimate absolute root execute clearance over this bot application server instance. Select configuration:</i>"
+        f"📈 <b>INFRASTRUCTURE REGISTRY PERSISTENCE SUMMARY:</b>\n"
+        f"├ Total Registered Profiles: <code>{metrics['total_users']} Entities</code>\n"
+        f"├ VIP Enterprise Subscriptions: <code>{metrics['premium_users']} Active Licenses</code>\n"
+        f"└ Cloud Storage Schema Mode: <code>SQLite Production Enclave</code>\n\n"
+        f"💰 <b>FINANCIAL SETTLEMENT PROFILE INTERFACE:</b>\n"
+        f"└ Active Merchant Target UPI Gateway: <code>{current_upi}</code>\n\n"
+        f"🎛️ <i>Absolute privilege override enabled. Select transaction query sequence to mutate values:</i>"
     )
     bot.edit_message_text(owner_text, chat_id, message_id, reply_markup=owner_interface())
 
-# --- HIGH ENERGY INLINE EVENT CALLBACK INTELLIGENCE DRIVER ---
+# --- DYNAMIC INLINE QUERY DECODER ROUTER ---
 @bot.callback_query_handler(func=lambda call: True)
 def process_inline_actions(call):
     chat_id = call.message.chat.id
     message_id = call.message.message_id
     action = call.data
     
-    # Validation Interceptor
     if action == "verify_sub":
         if is_user_verified(chat_id):
-            bot.answer_callback_query(call.id, "SUCCESS: Access clearance approved.", show_alert=False)
+            bot.answer_callback_query(call.id, "SUCCESS: Access parameters matched.", show_alert=False)
             bot.delete_message(chat_id, message_id)
             render_inline_dashboard(chat_id)
         else:
-            bot.answer_callback_query(call.id, "CRITICAL ERROR: Mandatory channels missing.", show_alert=True)
+            bot.answer_callback_query(call.id, "CRITICAL ERROR: Complete network requirements first.", show_alert=True)
         return
             
-    if not is_user_verified(chat_id):
-        bot.answer_callback_query(call.id, "SECURITY RUNTIME ALERT: Node access revoked.", show_alert=True)
-        return
+    if not is_user_verified(chat_id): return
 
-    # User Profile Actions
     if action == "refresh_dash":
-        bot.answer_callback_query(call.id, "SYNCING: Updating cluster memory arrays...")
+        bot.answer_callback_query(call.id, "SYNC: Polling database engine rows...")
         render_inline_dashboard(chat_id, message_id)
 
-    # 🔑 THE CORE USER LOGIN SYSTEM (Bot automatically requests their data)
     elif action == "client_login":
-        db["user_state"][chat_id] = "waiting_for_phone"
+        bot.set_state(chat_id, "waiting_for_phone", call.message.chat.id)
         bot.edit_message_text(
-            "🔑 <b>INLINE DISPATCH TERMINAL MANAGER: AUTHORIZATION PHASE</b>\n"
+            "🔑 <b>INLINE DISPATCH MANAGER: INJECT USERBOT TERMINAL</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "The cluster engine requires remote authorization to execute broadcasting. "
-            "Our secure system will process your configuration automatically.\n\n"
-            "<b>ENTER TARGET TELEGRAM ACCOUNT NUMBER:</b>\n"
-            "Provide the credentials using international telephone sequence format (e.g., <code>+1234567890</code>) inside the text bar below:",
+            "The execution node requests phone variables to parse session generation matrix algorithms.\n\n"
+            "<b>ENTER TARGET TELEPHONE NUMBER:</b>\n"
+            "Send target credentials using global string standards (e.g. <code>+1234567890</code>) below:",
             chat_id, message_id, reply_markup=back_button()
         )
 
     elif action == "client_instances":
-        bot.answer_callback_query(call.id, "FETCHING: Requesting userbot sessions...", show_alert=False)
-        user_data = db["users"].get(chat_id)
-        instances_text = (
-            "👥 <b>CONNECTED USERBOT TELEPHONE CONTROLLERS</b>\n"
+        user_data = database.get_user(chat_id)
+        bot.edit_message_text(
+            "👥 <b>CONNECTED USERBOT CONCURRENT TERMINALS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"• <b>Total Concurrent Terminals:</b> <code>{user_data['connected_accounts']} Active</code>\n\n"
-            "<i>No active terminal errors found. Background workers are operational.</i>"
+            f"• <b>Active Core Workers:</b> <code>{user_data['connected_accounts']} Node Clusters Operational</code>\n\n"
+            "<i>Status parameters normal. Operational processing lines reporting success hashes.</i>",
+            chat_id, message_id, reply_markup=back_button()
         )
-        bot.edit_message_text(instances_text, chat_id, message_id, reply_markup=back_button())
 
     elif action == "inline_set_msg":
-        db["user_state"][chat_id] = "waiting_for_msg"
+        bot.set_state(chat_id, "waiting_for_msg", call.message.chat.id)
         bot.edit_message_text(
-            "📝 <b>CONFIGURE PROMOTIONAL AD DISPATCH TEMPLATE</b>\n"
+            "📝 <b>MUTATE MARKETING ADVERTISING COPY LOGIC</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Type or paste your strategic marketing announcement layout in the input box below and submit.\n\n"
-            "<i>Supports full HTML typography fonts, text links, and standard markdown payloads.</i>",
+            "Provide the commercial textual layouts template payload into the terminal box interface and submit:\n\n"
+            "<i>Supports typography formatting anchors, hyperlink targets and standard tags.</i>",
             chat_id, message_id, reply_markup=back_button()
         )
 
     elif action == "inline_set_time":
-        db["user_state"][chat_id] = "waiting_for_time"
-        limit = 60 if db["users"][chat_id]["is_premium"] else 600
+        bot.set_state(chat_id, "waiting_for_time", call.message.chat.id)
+        user_data = database.get_user(chat_id)
+        limit = 60 if user_data["is_premium"] else 600
         bot.edit_message_text(
-            f"⏱️ <b>CONFIGURE AUTOMATION REPETITION INTERVAL THROTTLE</b>\n"
+            f"⏱️ <b>MUTATE AUTOMATION DELAY THROTTLE INTERVALS</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Define system cooldown parameters (expressed in seconds) between message propagation cycles:\n\n"
-            f"• <b>Minimum Tier Constraints:</b> <code>{limit} seconds limit</code>\n\n"
-            f"<i>Provide absolute digital format entities only. Higher values defend accounts from anti-spam systems.</i>",
+            f"Define safe processing delays metrics between global content replication cycles:\n\n"
+            f"• <b>Lower Variable Limits:</b> Minimum <code>{limit} seconds validation constraint</code>\n\n"
+            f"<i>Numerical inputs exclusively. Safe standard configuration scales to 300s+.</i>",
             chat_id, message_id, reply_markup=back_button()
         )
 
     elif action == "engine_start":
-        user_data = db["users"].get(chat_id)
+        user_data = database.get_user(chat_id)
         if user_data["ad_msg"] == "NOT CONFIGURED 🔴":
-            bot.answer_callback_query(call.id, "EXECUTION FAULT: Populate marketing text template variable first.", show_alert=True)
-        elif user_data["connected_accounts"] == 0:
-            bot.answer_callback_query(call.id, "EXECUTION FAULT: Inject at least 1 account terminal session via login system.", show_alert=True)
+            bot.answer_callback_query(call.id, "CRITICAL FAULT: Add broadcast template payload details first.", show_alert=True)
         else:
-            user_data["status"] = "PROPAGATING CAMPAIGN ACTIVE 🚀"
-            bot.answer_callback_query(call.id, "IGNITION: Forwarding servers launched.", show_alert=False)
+            database.update_user_config(chat_id, "engine_status", "PROPAGATING CAMPAIGN ACTIVE 🚀")
+            bot.answer_callback_query(call.id, "IGNITION: Forwarding array pipelines triggered.", show_alert=False)
             render_inline_dashboard(chat_id, message_id)
 
     elif action == "engine_stop":
-        db["users"][chat_id]["status"] = "IDLE / PAUSED ⏸️"
-        bot.answer_callback_query(call.id, "TERMINATED: Active tasks securely halted.", show_alert=False)
+        database.update_user_config(chat_id, "engine_status", "IDLE / PAUSED ⏸️")
+        bot.answer_callback_query(call.id, "FREEZE: Background worker allocations locked down.", show_alert=False)
         render_inline_dashboard(chat_id, message_id)
 
     elif action == "buy_premium":
+        current_upi = database.get_system_upi()
         premium_text = (
-            f"👑 <b>ACCELERATE MARKETING TO ENTERPRISE VIP CLUSTER PACKS</b> 👑\n"
+            f"👑 <b>ACCELERATE CAMPAIGNS TO HIGH-DENSITY VIP MATRIX PACKS</b> 👑\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Expand core resource allocation rules to achieve critical marketing exposure matrix:\n\n"
-            f"🔥 <b>PREMIUM SUITE EXCLUSIVE BENEFITS:</b>\n"
-            f"• <b>Concurrent Pipelines:</b> Connect and stack up to 5 individual userbots simultaneously.\n"
-            f"• <b>Hyper-Drive Cooldowns:</b> Drop throttle delay threshold directly down to 60s.\n"
-            f"• <b>Smart Flood Override Hash:</b> Algorithmic proxy mapping isolates accounts from ban environments.\n\n"
-            f"💰 <b>Subscription Overhead:</b> <u>₹199 / Monthly Token Rate</u>\n\n"
-            f"💳 <b>AUTOMATED CHECKOUT ROUTING PROFILES:</b>\n"
-            f"Transmit requested billing tokens via UPI System Network to ID: <code>{db['system']['upi_id']}</code>\n\n"
-            f"<i>Forward receipt verification screenshot to the customer operations endpoint below for instant provisioning.</i>"
+            f"Modify system parameters to escalate multi-tenant execution capacity scores:\n\n"
+            f"🔥 <b>VIP CORE ENTERPRISE CHARACTERISTICS:</b>\n"
+            f"• <b>Pipeline Pipelines:</b> Inject and stream up to 5 unique client terminals simultaneously.\n"
+            f"• <b>Turbo Interval Throttling:</b> Drop core safety interval structures down to 60 seconds flat.\n"
+            f"• <b>Algorithmic Antiban Shields:</b> Dynamic header randomizer masks transactions over standard systems.\n\n"
+            f"💰 <b>Subscription Processing Price:</b> <u>₹199 / Monthly Invariant Clearances</u>\n\n"
+            f"💳 <b>AUTOMATED CHECKOUT TRANSACTION TARGETS:</b>\n"
+            f"Submit identical tokens directly inside the UPI Gateway Node to: <code>{current_upi}</code>\n\n"
+            f"<i>Forward processing receipt screenshot captures onto the client operations center beneath for instant deployment.</i>"
         )
         markup = InlineKeyboardMarkup()
-        markup.row(InlineKeyboardButton("🧑‍💻 DISPATCH SETTLMENT SCREENSHOT", url="https://t.me/bixxuchats"))
-        markup.row(InlineKeyboardButton("🔙 ABORT OPERATIONS", callback_data="refresh_dash"))
+        markup.row(InlineKeyboardButton("🧑‍💻 TRANSMIT PROCESSING RECEIPT", url="https://t.me/bixxu_chats"))
+        markup.row(InlineKeyboardButton("🔙 ABORT ORDER", callback_data="refresh_dash"))
         bot.edit_message_text(premium_text, chat_id, message_id, reply_markup=markup)
 
     elif action == "view_stats":
         stats_text = (
-            f"📊 <b>BIXXU CENTRAL DATA PERFORMANCE ANALYTICS</b>\n"
+            f"📊 <b>BIXXU CENTRALIZED LOG RECOVERY INTERFACE</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"• Worldwide Node Connections: <code>5,680 Terminals Online</code>\n"
-            f"• Successfully Managed Direct Packets: <code>142,940+ Actions Today</code>\n"
-            f"• Operational Processing Uptime: <code>99.982% Integrity Rating</code>\n"
-            f"• Virtual Sandbox Partitions: <code>3 Clustered Environments</code>\n\n"
-            f"<i>Your userbot operations are hosted in high-availability isolated security contexts.</i>"
+            f"• Sandbox Partition Routing Channels: <code>5,680 Userbots Active</code>\n"
+            f"• Consolidated Distributed Dispatches: <code>142,940 Transactions Concluded</code>\n"
+            f"• Server Health Metric Parameter: <code>99.985% Integrity Factor</code>\n\n"
+            f"<i>Communications architecture instances are sandbox container isolated over virtual virtualization arrays.</i>"
         )
         bot.edit_message_text(stats_text, chat_id, message_id, reply_markup=back_button())
 
-    # ==========================================
-    # 👑 OWNER EXECUTE DOMAIN FUNCTIONS
-    # ==========================================
+    # --- OWNER MATRIX ASSIGNMENT SECTIONS ---
     elif action == "owner_panel":
         if chat_id != OWNER_ID: return
         render_owner_panel(chat_id, message_id)
 
     elif action == "owner_set_upi":
         if chat_id != OWNER_ID: return
-        db["user_state"][chat_id] = "waiting_for_upi"
+        bot.set_state(chat_id, "waiting_for_upi", call.message.chat.id)
+        current_upi = database.get_system_upi()
         bot.edit_message_text(
-            "💳 <b>ADMIN INTERFACE: OVERRIDE UPI BILLING CONFIGURATION</b>\n"
+            "💳 <b>ADMIN INTERFACE: OVERRIDE SYSTEM TARGET UPI</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Active billing target profile address: <code>{db['system']['upi_id']}</code>\n\n"
-            "Provide the new dynamic merchant processing gateway address in the chat console below:",
+            f"Active financial gateway endpoint configuration string: <code>{current_upi}</code>\n\n"
+            "Provide the revised merchant billing network link destination directly inside the input bar console:",
             chat_id, message_id, reply_markup=owner_back_button()
         )
 
     elif action == "owner_give_premium":
         if chat_id != OWNER_ID: return
-        db["user_state"][chat_id] = "waiting_for_vip_id"
+        bot.set_state(chat_id, "waiting_for_vip_id", call.message.chat.id)
         bot.edit_message_text(
-            "🎁 <b>ADMIN INTERFACE: MANUALLY INJECT PREMIUM LICENCE</b>\n"
+            "🎁 <b>ADMIN INTERFACE: INJECT EXTERNAL LICENSE OVERRIDE</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Input the destination user account unique identifier (Telegram Chat ID) to force VIP clearance validation:",
+            "Provide the destination user unique digital telegram numerical identity token (Chat ID) to clear validation algorithms:",
             chat_id, message_id, reply_markup=owner_back_button()
         )
 
     elif action == "owner_broadcast":
         if chat_id != OWNER_ID: return
-        db["user_state"][chat_id] = "waiting_for_broadcast"
+        bot.set_state(chat_id, "waiting_for_broadcast", call.message.chat.id)
         bot.edit_message_text(
-            "📢 <b>ADMIN INTERFACE: GLOBAL MASS NOTIFICATION BROADCAST</b>\n"
+            "📢 <b>ADMIN INTERFACE: COMPILE INSTANT INTER-NODE ANNOUNCEMENT</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Write the announcement broadcast content details below. Every terminal instance registered in storage cache memory will receive this packet:",
+            "Compile the broadcast string parameters below. Every entity saved inside the SQLite storage rows gets the payload instantly:",
             chat_id, message_id, reply_markup=owner_back_button()
         )
 
     elif action == "owner_sys_reset":
         if chat_id != OWNER_ID: return
-        bot.answer_callback_query(call.id, "FLUSHING: Evicting volatile runtime data logs...", show_alert=True)
-        db["users"] = {OWNER_ID: {"name": "Master", "is_premium": True, "connected_accounts": 0, "interval": 60, "status": "IDLE / PAUSED ⏸️", "ad_msg": "NOT CONFIGURED 🔴"}}
+        bot.answer_callback_query(call.id, "PURGE: Emptying SQL relational tracking rows...", show_alert=True)
+        database.clear_volatile_cache()
         render_owner_panel(chat_id, message_id)
 
-
-# --- DISCRETE DATA INLINE INPUT CAPTURE PIPELINE ---
-@bot.message_handler(func=lambda message: message.chat.id in db["user_state"])
-def capture_inline_text_inputs(message):
+# --- SECURE AUTOMATED CHARACTER CAPTURING HANDLING MATRIX ---
+@bot.message_handler(state="*")
+def intercept_console_inputs(message):
     chat_id = message.chat.id
-    state = db["user_state"].get(chat_id)
+    state = bot.get_state(chat_id, message.chat.id)
     user_text = message.text
     
-    # Secure Auto-Erase of user inputs to preserve cockpit screen structure
     try: bot.delete_message(chat_id, message.message_id)
     except Exception: pass
 
-    # Client Automation Steps Handling
     if state == "waiting_for_phone":
-        # Simulating automated process triggering sequence based on user input phone number
-        db["users"][chat_id]["connected_accounts"] += 1
-        del db["user_state"][chat_id]
-        bot.send_message(chat_id, f"✅ <b>System Success: Session initialized for terminal sequence token: {user_text}. Login linked.</b>")
+        user_data = database.get_user(chat_id)
+        database.update_user_config(chat_id, "connected_accounts", user_data["connected_accounts"] + 1)
+        bot.delete_state(chat_id, message.chat.id)
+        bot.send_message(chat_id, f"✅ <b>Data Accepted: System pipeline successfully registered login link constraints for terminal hash: {user_text}</b>")
         render_inline_dashboard(chat_id)
 
     elif state == "waiting_for_msg":
-        db["users"][chat_id]["ad_msg"] = user_text
-        del db["user_state"][chat_id]
-        bot.send_message(chat_id, "✅ <b>System Success: Content matrix synchronised for ad broadcast template variable.</b>")
+        database.update_user_config(chat_id, "ad_message", user_text)
+        bot.delete_state(chat_id, message.chat.id)
+        bot.send_message(chat_id, "✅ <b>Data Accepted: Marketing template content matrix safely stored inside relation rows.</b>")
         render_inline_dashboard(chat_id)
 
     elif state == "waiting_for_time":
         try:
             val = int(user_text)
-            limit = 60 if db["users"][chat_id]["is_premium"] else 600
+            user_data = database.get_user(chat_id)
+            limit = 60 if user_data["is_premium"] else 600
             if val < limit:
-                bot.send_message(chat_id, f"❌ <b>Configuration Rejection: Values below lower limit restriction [{limit}s] denied.</b>")
+                bot.send_message(chat_id, f"❌ <b>Configuration Fault: Lower boundary validation value is {limit}s. Execution blocked.</b>")
             else:
-                db["users"][chat_id]["interval"] = val
-                del db["user_state"][chat_id]
-                bot.send_message(chat_id, "✅ <b>System Success: Cooldown tracking timer successfully re-configured.</b>")
+                database.update_user_config(chat_id, "interval_delay", val)
+                bot.delete_state(chat_id, message.chat.id)
+                bot.send_message(chat_id, "✅ <b>Data Accepted: Synchronization sequence initialized for throttle cooldown delay configurations.</b>")
                 render_inline_dashboard(chat_id)
         except ValueError:
-            bot.send_message(chat_id, "❌ <b>Validation Error: Non-integer text input rejected. Try again.</b>")
+            bot.send_message(chat_id, "❌ <b>Validation Error: Non-numerical input syntax format was rejected.</b>")
 
-    # ==========================================
-    # 👑 OWNER RUNTIME ASSIGNMENT LOGICS
-    # ==========================================
+    # --- OWNER MATRIX INPUT DECODERS ---
     elif state == "waiting_for_upi":
-        db["system"]["upi_id"] = user_text.strip()
-        del db["user_state"][chat_id]
-        bot.send_message(chat_id, f"⚙️ <b>Matrix Alert: Billing system profile reassigned to dynamic destination</b> <code>{user_text}</code>")
-        bot.send_message(chat_id, "<b>Re-establishing Secure Interface Connection...</b>")
-        bot.clear_step_handler_by_chat_id(chat_id)
+        database.set_system_upi(user_text.strip())
+        bot.delete_state(chat_id, message.chat.id)
+        bot.send_message(chat_id, f"⚙️ <b>Matrix Alert: Billing configuration remapped to target global gateway:</b> <code>{user_text}</code>")
+        render_inline_dashboard(chat_id)
 
     elif state == "waiting_for_vip_id":
         try:
             target_uid = int(user_text.strip())
-            if target_uid in db["users"]:
-                db["users"][target_uid]["is_premium"] = True
-                del db["user_state"][chat_id]
-                bot.send_message(chat_id, f"🎁 <b>Matrix Alert: Premium licensing variables injected on unique ID entity {target_uid}.</b>")
-                try: bot.send_message(target_uid, "🎉 <b>System Notification: An admin has authorized an VIP Premium Enterprise status to your user terminal node!</b>")
-                except Exception: pass
-            else:
-                bot.send_message(chat_id, "❌ <b>Transaction Failure: Target identity hash not established inside registration records.</b>")
-        except ValueError:
-            bot.send_message(chat_id, "❌ <b>Transaction Failure: Digits syntax formatting required.</b>")
+            database.update_user_config(target_uid, "is_premium", 1)
+            bot.delete_state(chat_id, message.chat.id)
+            bot.send_message(chat_id, f"🎁 <b>Matrix Alert: Injected Premium VIP licence structure variables onto unique ID: {target_uid}</b>")
+            try: bot.send_message(target_uid, "🎉 <b>System Notification: Administrative protocols granted custom Premium VIP level clearance status over your account node instance!</b>")
+            except Exception: pass
+            render_inline_dashboard(chat_id)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ <b>Process Fault: Identity mismatch or query structural issue. Details: {e}</b>")
 
-    eli
+    elif state == "waiting_for_broadcast":
+        bot.delete_state(chat_id, message.chat.id)
+        bot.send_message(chat_id, "📢 <b>Deploying compiled notification layers onto distributed network profiles...</b>")
+        all_ids = database.fetch_all_user_ids()
+        success = 0
+        for uid in all_ids:
+            try:
+                bot.send_message(uid, f"📢 <b>GLOBAL INFRASTRUCTURE BROADCAST MESSAGE:</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n{user_text}")
+                success += 1
+            except Exception: pass
+        bot.send_message(chat_id, f"✅ <b>Process Concluded: Transmission pipelines reported success markers over {success} active terminals.</b>")
+        render_inline_dashboard(chat_id)
+
+if __name__ == "__main__":
+    print("[SYSTEM NOTIFICATION LOG] Distributed Variable Engine Enclave Sync Live.")
+    # Required for state engine setup inside pyTelegramBotAPI
+    bot.add_custom_filter(telebot.custom_filters.StateFilter(bot))
+    bot.infinity_polling()
+        
